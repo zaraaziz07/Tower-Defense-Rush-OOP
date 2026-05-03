@@ -1,27 +1,11 @@
-﻿#include"Entity.h"
+#include"Entity.h"
 #include"Enemy.h"
 #include"Tower.h"
 #include"Globals.h"
 
 
-WayPoint waypoints[wayPointsCount] =
-{
-    { 0 * 32 + 16, 6.5f * 32 },   // (6,7)
+Wave waves[totalWaves];
 
-    { 7.5f * 32, 6.5f * 32 },     // (7,8) ← FIXED (was 8.5)
-
-    { 7.5f * 32, 17.5f * 32 },    // vertical continues
-
-    { 15.5f * 32, 17.5f * 32 },   // (15,16)
-
-    { 15.5f * 32, 9.5f * 32 },    // (9,10)
-
-    { 25.5f * 32, 9.5f * 32 },    // (25,26)
-
-    { 25.5f * 32, 19.5f * 32 },   // (18,19)
-
-    { 34 * 32 + 16, 19.5f * 32 }  // final horizontal
-};
 void SetAttackPath()
 {
     for (int i = 0;i < 9;i++)
@@ -64,7 +48,7 @@ void SetAttackPath()
 void SetFences()
 {
 
-     
+
     for (int j = 0; j < 35; j++)
     {
         grid[0][j] = 2;
@@ -76,18 +60,97 @@ void SetFences()
         grid[i][35] = 2;
     }
 
-     
+
     for (int i = 0; i < rows; i++)
     {
         grid[i][0] = 2;
     }
 }
+
+WayPoint waypoints[wayPointsCount] =
+{
+    { 0 * 32 + 16, 6.5f * 32 },
+    { 7.5f * 32, 6.5f * 32 },
+    { 7.5f * 32, 17.5f * 32 },
+    { 15.5f * 32, 17.5f * 32 },
+    { 15.5f * 32, 9.5f * 32 },
+    { 25.5f * 32, 9.5f * 32 },
+    { 25.5f * 32, 19.5f * 32 },
+    { 34 * 32 + 16, 19.5f * 32 }
+};
+
+
+void SetWaves()
+{
+    waves[0].enemyCount = 5;
+    waves[0].spawnInterval = 2.0f;
+    for (int i = 0;i < 5;i++)
+    {
+        waves[0].enemies[i] = new BasicEnemy(waypoints, wayPointsCount);
+    }
+    waves[1].enemyCount = 8;
+    waves[1].spawnInterval = 1.8f;
+    for (int i = 0;i < 4;i++)
+    {
+        waves[1].enemies[i] = new BasicEnemy(waypoints, wayPointsCount);
+    }
+    for (int i = 4;i < 8;i++)
+    {
+        waves[1].enemies[i] = new FastEnemy(waypoints, wayPointsCount);
+    }
+    waves[2].enemyCount = 10;
+    waves[2].spawnInterval = 1.5f;
+    for (int i = 0;i < 3;i++)
+    {
+        waves[2].enemies[i] = new BasicEnemy(waypoints, wayPointsCount);
+    }
+    for (int i = 3;i < 6;i++)
+    {
+        waves[2].enemies[i] = new FastEnemy(waypoints, wayPointsCount);
+    }
+    for (int i = 6;i < 10;i++)
+    {
+        waves[2].enemies[i] = new TankEnemy(waypoints, wayPointsCount);
+    }
+
+    waves[3].enemyCount = 12;
+    waves[3].spawnInterval = 1.2f;
+    for (int i = 0; i < 3; i++)
+        waves[3].enemies[i] = new BasicEnemy(waypoints, wayPointsCount);
+    for (int i = 3; i < 6; i++)
+        waves[3].enemies[i] = new FastEnemy(waypoints, wayPointsCount);
+    for (int i = 6; i < 9; i++)
+        waves[3].enemies[i] = new TankEnemy(waypoints, wayPointsCount);
+    for (int i = 9; i < 12; i++)
+        waves[3].enemies[i] = new FlyingEnemy(
+            waypoints[0].x, waypoints[0].y,
+            waypoints[7].x, waypoints[7].y);
+
+    waves[4].enemyCount = 15;
+    waves[4].spawnInterval = 1.0f;
+    for (int i = 0; i < 3; i++)
+        waves[4].enemies[i] = new BasicEnemy(waypoints, wayPointsCount);
+    for (int i = 3; i < 6; i++)
+        waves[4].enemies[i] = new FastEnemy(waypoints, wayPointsCount);
+    for (int i = 6; i < 9; i++)
+        waves[4].enemies[i] = new TankEnemy(waypoints, wayPointsCount);
+    for (int i = 9; i < 12; i++)
+        waves[4].enemies[i] = new FlyingEnemy(
+            waypoints[0].x, waypoints[0].y,
+            waypoints[7].x, waypoints[7].y);
+    for (int i = 12;i < 15;i++)
+    {
+        waves[4].enemies[i] = new OmegaEnemy(waypoints, wayPointsCount);
+    }
+}
+
 int main()
 {
     sf::RenderWindow window(sf::VideoMode::getDesktopMode(), "Tower Defense Rush", sf::Style::Fullscreen);
     window.setFramerateLimit(60);
     SetAttackPath();
     SetFences();
+    SetWaves();
 
     sf::Texture grassTexture;
     grassTexture.loadFromFile("assets/grass.png");
@@ -103,7 +166,12 @@ int main()
     float scaleY = (float)TileSize / brickTexture.getSize().y;
     brickSprite.setScale(scaleX, scaleY);
 
-    BasicEnemy enemy(waypoints,wayPointsCount);
+    int currentWave = 0;
+    sf::Clock spawnClock;
+    Enemy* activeEnemies[MaxEnemiesPerWave];
+    int activeCount = 0;
+   
+
     while (window.isOpen())
     {
         sf::Event event;
@@ -126,7 +194,7 @@ int main()
                 if (grid[i][j] == 1)
                 {
                     tile.setTexture(&mudTexture);
-                   
+
                     tile.setFillColor(sf::Color(139, 115, 85));
                 }
                 else if (grid[i][j] == 2)
@@ -142,12 +210,69 @@ int main()
                     tile.setFillColor(sf::Color::White);
                 }
                 window.draw(tile);
-                
-               
+            }
+            
+      
+        }
+        Wave& wave = waves[currentWave];
+        if (currentWave < totalWaves)
+        {
+            Wave& wave = waves[currentWave];
+
+            if (wave.currentSpawn < wave.enemyCount)
+            {
+                if (spawnClock.getElapsedTime().asSeconds() >= wave.spawnInterval)
+                {
+                    activeEnemies[activeCount] = wave.enemies[wave.currentSpawn];
+                    activeCount++;
+                    wave.currentSpawn++;
+                    spawnClock.restart();
+                }
+            }
+
+            if (wave.currentSpawn >= wave.enemyCount && activeCount == 0)
+                currentWave++;
+        }
+        if (wave.currentSpawn < wave.enemyCount)
+        {
+            if (spawnClock.getElapsedTime().asSeconds() >= wave.spawnInterval)
+            {
+                activeEnemies[activeCount] = wave.enemies[wave.currentSpawn];
+                activeCount++;
+                wave.currentSpawn++;
+                spawnClock.restart();
             }
         }
-        enemy.update();
-        enemy.render(window);
+
+
+        for (int i = 0; i < activeCount; i++)
+        {
+            if (activeEnemies[i] != nullptr)
+            {
+                activeEnemies[i]->update();
+                activeEnemies[i]->render(window);
+            }
+            bool shouldRemove = false;
+
+            if (!activeEnemies[i]->isAlive() || activeEnemies[i]->reachedExit())
+                shouldRemove = true;
+
+            if (shouldRemove)
+            {
+                // swap with last element and reduce count
+                activeEnemies[i] = activeEnemies[activeCount - 1];
+                activeEnemies[activeCount - 1] = nullptr;
+                activeCount--;
+                i--;  // recheck this index
+            }
+
+        }
+        if (wave.currentSpawn >= wave.enemyCount && activeCount == 0)
+        {
+            currentWave++;
+        }
+
+   
         window.display();
     }
     return 0;
