@@ -3,7 +3,6 @@
 #include"Tower.h"
 #include"Globals.h"
 
-
 Wave waves[totalWaves];
 
 void SetAttackPath()
@@ -148,6 +147,9 @@ int main()
 {
     sf::RenderWindow window(sf::VideoMode::getDesktopMode(), "Tower Defense Rush", sf::Style::Fullscreen);
     window.setFramerateLimit(60);
+    sf::View gameView(sf::FloatRect(0.f, 0.f, (float)(cols * TileSize), (float)(rows * TileSize)));
+    window.setView(gameView);
+
     SetAttackPath();
     SetFences();
     SetWaves();
@@ -165,12 +167,42 @@ int main()
     float scaleX = (float)TileSize / brickTexture.getSize().x;
     float scaleY = (float)TileSize / brickTexture.getSize().y;
     brickSprite.setScale(scaleX, scaleY);
+   
+    sf::Texture coinTexture;
+    coinTexture.loadFromFile("assets/coin.png");
+
+    sf::Sprite coinSprite;
+    coinSprite.setTexture(coinTexture);
+    float desiredSize = 40.f;
+    coinSprite.setScale(desiredSize / coinTexture.getSize().x,
+        desiredSize / coinTexture.getSize().y);
+
+    sf::Font font;
+    font.loadFromFile("assets/arial.ttf");
+
+    sf::Text coinText;
+    coinText.setFont(font);
+    coinText.setCharacterSize(24);
+    coinText.setFillColor(sf::Color::Yellow);
+
+    sf::Texture heartTexture;
+    heartTexture.loadFromFile("assets/heart.png");
+
+    sf::Sprite heartSprite;
+    heartSprite.setTexture(heartTexture);
+    float heartSize = 40.f;
+    heartSprite.setScale(heartSize / heartTexture.getSize().x, heartSize / heartTexture.getSize().y);
+
+    sf::Text livesText;
+    livesText.setFont(font);
+    livesText.setCharacterSize(24);
+    livesText.setFillColor(sf::Color::Red);
 
     int currentWave = 0;
     sf::Clock spawnClock;
     Enemy* activeEnemies[MaxEnemiesPerWave];
     int activeCount = 0;
-   
+  
 
     while (window.isOpen())
     {
@@ -183,6 +215,10 @@ int main()
                 if (event.key.code == sf::Keyboard::Escape)
                     window.close();
         }
+        sf::RectangleShape panel(sf::Vector2f(cols * TileSize - 36 * TileSize, rows * TileSize));
+        panel.setPosition(36 * TileSize, 0);
+        panel.setFillColor(sf::Color(50, 50, 50));  // dark grey
+        window.draw(panel);
 
         sf::RectangleShape tile(sf::Vector2f(TileSize, TileSize));
         window.clear(sf::Color(30, 30, 30));
@@ -211,17 +247,17 @@ int main()
                 }
                 window.draw(tile);
             }
-            
-      
+
+
         }
         Wave& wave = waves[currentWave];
         if (currentWave < totalWaves)
         {
-            Wave& wave = waves[currentWave];
 
-            if (wave.currentSpawn < wave.enemyCount)
+            if (wave.currentSpawn < wave.enemyCount)    //agar current enemy ka number less ho total enemies of the wave se
             {
                 if (spawnClock.getElapsedTime().asSeconds() >= wave.spawnInterval)
+                    //checking if enough time has passed till last spawn
                 {
                     activeEnemies[activeCount] = wave.enemies[wave.currentSpawn];
                     activeCount++;
@@ -230,20 +266,7 @@ int main()
                 }
             }
 
-            if (wave.currentSpawn >= wave.enemyCount && activeCount == 0)
-                currentWave++;
         }
-        if (wave.currentSpawn < wave.enemyCount)
-        {
-            if (spawnClock.getElapsedTime().asSeconds() >= wave.spawnInterval)
-            {
-                activeEnemies[activeCount] = wave.enemies[wave.currentSpawn];
-                activeCount++;
-                wave.currentSpawn++;
-                spawnClock.restart();
-            }
-        }
-
 
         for (int i = 0; i < activeCount; i++)
         {
@@ -259,20 +282,32 @@ int main()
 
             if (shouldRemove)
             {
-                // swap with last element and reduce count
                 activeEnemies[i] = activeEnemies[activeCount - 1];
                 activeEnemies[activeCount - 1] = nullptr;
                 activeCount--;
-                i--;  // recheck this index
+                i--;
             }
 
         }
+
         if (wave.currentSpawn >= wave.enemyCount && activeCount == 0)
         {
             currentWave++;
         }
+       
 
-   
+        coinText.setString(std::to_string(coins));
+        coinText.setPosition(1212, 22);  
+        window.draw(coinText);
+        coinSprite.setPosition(1158, 20);
+        window.draw(coinSprite);
+
+        heartSprite.setPosition(1280, 22);
+        window.draw(heartSprite);
+        livesText.setString(std::to_string(lives));
+        livesText.setPosition(1322, 22);
+        window.draw(livesText);
+
         window.display();
     }
     return 0;
