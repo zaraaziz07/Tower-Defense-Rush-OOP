@@ -198,6 +198,81 @@ int main()
     livesText.setCharacterSize(24);
     livesText.setFillColor(sf::Color::Red);
 
+    sf::RectangleShape cannonBox(sf::Vector2f(200, 60));
+    cannonBox.setPosition(1160, 120);
+    cannonBox.setFillColor(sf::Color(80, 80, 80));
+    cannonBox.setOutlineThickness(3);
+    cannonBox.setOutlineColor(sf::Color::White);
+
+    sf::Text cannonText;
+    cannonText.setFont(font);
+    cannonText.setCharacterSize(20);
+    cannonText.setFillColor(sf::Color::White);
+    cannonText.setString("Cannon Tower - 100");
+    cannonText.setPosition(1168, 135);
+
+    
+
+    sf::RectangleShape sniperBox(sf::Vector2f(200, 60));
+    sniperBox.setPosition(1160, 200);
+    sniperBox.setFillColor(sf::Color(50, 70, 120));
+    sniperBox.setOutlineThickness(3);
+    sniperBox.setOutlineColor(sf::Color::White);
+
+    sf::Text sniperText;
+    sniperText.setFont(font);
+    sniperText.setCharacterSize(20);
+    sniperText.setFillColor(sf::Color::White);
+    sniperText.setString("Sniper Tower - 150");
+    sniperText.setPosition(1170, 215);
+
+   
+
+    sf::RectangleShape machineBox(sf::Vector2f(200, 60));
+    machineBox.setPosition(1160, 280);
+    machineBox.setFillColor(sf::Color(120, 90, 40));
+    machineBox.setOutlineThickness(3);
+    machineBox.setOutlineColor(sf::Color::White);
+
+    sf::Text machineText;
+    machineText.setFont(font);
+    machineText.setCharacterSize(18);
+    machineText.setFillColor(sf::Color::White);
+    machineText.setString("Machine Gun - 120");
+    machineText.setPosition(1170, 295);
+
+    
+
+    sf::RectangleShape slowBox(sf::Vector2f(200, 60));
+    slowBox.setPosition(1160, 360);
+    slowBox.setFillColor(sf::Color(40, 100, 150));
+    slowBox.setOutlineThickness(3);
+    slowBox.setOutlineColor(sf::Color::White);
+
+    sf::Text slowText;
+    slowText.setFont(font);
+    slowText.setCharacterSize(20);
+    slowText.setFillColor(sf::Color::White);
+    slowText.setString("Slow Tower - 130");
+    slowText.setPosition(1170, 375);
+
+   
+
+    sf::RectangleShape bombBox(sf::Vector2f(200, 60));
+    bombBox.setPosition(1160, 440);
+    bombBox.setFillColor(sf::Color(150, 60, 60));
+    bombBox.setOutlineThickness(3);
+    bombBox.setOutlineColor(sf::Color::White);
+
+    sf::Text bombText;
+    bombText.setFont(font);
+    bombText.setCharacterSize(20);
+    bombText.setFillColor(sf::Color::White);
+    bombText.setString("Bomb Tower - 200");
+    bombText.setPosition(1170, 455);
+
+   
+
     int currentWave = 0;
     sf::Clock spawnClock;
     Enemy* activeEnemies[MaxEnemiesPerWave];
@@ -308,6 +383,16 @@ int main()
         livesText.setPosition(1322, 22);
         window.draw(livesText);
 
+        window.draw(cannonBox);
+        window.draw(cannonText);
+        window.draw(sniperBox);
+        window.draw(sniperText);
+        window.draw(machineBox);
+        window.draw(machineText);
+        window.draw(slowBox);
+        window.draw(slowText);
+        window.draw(bombBox);
+        window.draw(bombText);
         window.display();
     }
     return 0;
