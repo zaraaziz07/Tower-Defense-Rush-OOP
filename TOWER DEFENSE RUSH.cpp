@@ -143,6 +143,19 @@ void SetWaves()
     }
 }
 
+bool isValidTowerPlacement(int row, int col)
+{
+  
+    if (row < 0 || row >= rows || col < 0 || col >= cols)
+        return false;
+
+   
+    if (grid[row][col] != 0)
+        return false;
+
+    return true;
+}
+
 int main()
 {
     sf::RenderWindow window(sf::VideoMode::getDesktopMode(), "Tower Defense Rush", sf::Style::Fullscreen);
@@ -192,6 +205,29 @@ int main()
     heartSprite.setTexture(heartTexture);
     float heartSize = 40.f;
     heartSprite.setScale(heartSize / heartTexture.getSize().x, heartSize / heartTexture.getSize().y);
+
+    sf::Texture smallHeartTexture;
+    smallHeartTexture.loadFromFile("assets/heart.png");
+
+    sf::Sprite smallHeartSprite;
+    smallHeartSprite.setTexture(smallHeartTexture);
+    smallHeartSprite.setScale(
+        25.f / smallHeartTexture.getSize().x,
+        25.f / smallHeartTexture.getSize().y);
+
+    sf::RectangleShape lifeBox(sf::Vector2f(200, 60));
+    lifeBox.setPosition(1160, 520);
+    lifeBox.setFillColor(sf::Color(150, 20, 20));
+    lifeBox.setOutlineThickness(3);
+    lifeBox.setOutlineColor(sf::Color::White);
+
+    sf::Text lifeText;
+    lifeText.setFont(font);
+    lifeText.setCharacterSize(20);
+    lifeText.setFillColor(sf::Color::White);
+    lifeText.setString("Buy a Life - 500");
+    lifeText.setPosition(1200, 535);
+    smallHeartSprite.setPosition(1168, 535);
 
     sf::Text livesText;
     livesText.setFont(font);
@@ -289,14 +325,143 @@ int main()
             if (event.type == sf::Event::KeyPressed)
                 if (event.key.code == sf::Keyboard::Escape)
                     window.close();
+            if (event.type == sf::Event::MouseButtonPressed)
+            {
+                
+                sf::Vector2f mousePos = window.mapPixelToCoords(
+                    sf::Vector2i(event.mouseButton.x, event.mouseButton.y));
+                
+
+                    bool clickedOnBox = false;
+
+                  
+                    if (cannonBox.getGlobalBounds().contains(mousePos.x, mousePos.y))
+                    {
+                        if (coins >= 100)
+                        {
+                            selectedTower = "Cannon";
+                            placingTower = true;
+                            selectedCost = 100;
+                        }
+
+                        clickedOnBox = true;
+                    }
+
+                  
+                    else if (sniperBox.getGlobalBounds().contains(mousePos.x, mousePos.y))
+                    {
+                        if (coins >= 150)
+                        {
+                            selectedTower = "Sniper";
+                            placingTower = true;
+                            selectedCost = 150;
+                        }
+
+                        clickedOnBox = true;
+                    }
+
+                  
+                    else if (machineBox.getGlobalBounds().contains(mousePos.x, mousePos.y))
+                    {
+                        if (coins >= 120)
+                        {
+                            selectedTower = "Machine";
+                            placingTower = true;
+                            selectedCost = 120;
+                        }
+
+                        clickedOnBox = true;
+                    }
+
+                
+                    else if (slowBox.getGlobalBounds().contains(mousePos.x, mousePos.y))
+                    {
+                        if (coins >= 130)
+                        {
+                            selectedTower = "Slow";
+                            placingTower = true;
+                            selectedCost = 130;
+                        }
+
+                        clickedOnBox = true;
+                    }
+
+                   
+                    else if (bombBox.getGlobalBounds().contains(mousePos.x, mousePos.y))
+                    {
+                        if (coins >= 200)
+                        {
+                            selectedTower = "Bomb";
+                            placingTower = true;
+                            selectedCost = 200;
+                        }
+
+                        clickedOnBox = true;
+                    }
+
+                    else if (lifeBox.getGlobalBounds().contains(mousePos.x, mousePos.y))
+                    {
+                        if (coins >= 500)
+                        {
+                            coins -= 500;
+                            lives++;
+                        }
+
+                        clickedOnBox = true;
+                    }
+
+                   
+                    if (placingTower && !clickedOnBox)
+                    {
+                        int col = mousePos.x / TileSize;
+                        int row = mousePos.y / TileSize;
+
+                       
+                        if (mousePos.x >= 36 * TileSize)
+                        {
+                            placingTower = false;   
+                            selectedTower = "";
+                            continue;              
+                        }
+
+                        if (isValidTowerPlacement(row, col))
+                        {
+                            if (selectedTower == "Cannon")
+                                placedTowers[towerCount] = new CannonTower(col * TileSize, row * TileSize);
+
+                            else if (selectedTower == "Sniper")
+                                placedTowers[towerCount] = new SniperTower(col * TileSize, row * TileSize);
+
+                            else if (selectedTower == "Machine")
+                                placedTowers[towerCount] = new MachineGunTower(col * TileSize, row * TileSize);
+
+                            else if (selectedTower == "Slow")
+                                placedTowers[towerCount] = new SlowTower(col * TileSize, row * TileSize);
+
+                            else if (selectedTower == "Bomb")
+                                placedTowers[towerCount] = new BombTower(col * TileSize, row * TileSize);
+
+                            towerCount++;
+
+                            grid[row][col] = 3; 
+
+                            coins -= selectedCost;
+
+                            placingTower = false;
+                            selectedTower = "";
+                        }
+                    }
+            }
         }
         sf::RectangleShape panel(sf::Vector2f(cols * TileSize - 36 * TileSize, rows * TileSize));
         panel.setPosition(36 * TileSize, 0);
-        panel.setFillColor(sf::Color(50, 50, 50));  // dark grey
-        window.draw(panel);
+        panel.setFillColor(sf::Color(50, 50, 50));  
+      
 
         sf::RectangleShape tile(sf::Vector2f(TileSize, TileSize));
+       
         window.clear(sf::Color(30, 30, 30));
+        window.draw(panel);
         for (int i = 0;i < rows;i++)
         {
             for (int j = 0;j < cols;j++)
@@ -325,18 +490,19 @@ int main()
 
 
         }
-        Wave& wave = waves[currentWave];
+        Wave* wave = nullptr;
+
         if (currentWave < totalWaves)
         {
-
-            if (wave.currentSpawn < wave.enemyCount)    //agar current enemy ka number less ho total enemies of the wave se
+            wave = &waves[currentWave];
+            if (wave->currentSpawn < wave->enemyCount)    //agar current enemy ka number less ho total enemies of the wave se
             {
-                if (spawnClock.getElapsedTime().asSeconds() >= wave.spawnInterval)
+                if (spawnClock.getElapsedTime().asSeconds() >= wave->spawnInterval)
                     //checking if enough time has passed till last spawn
                 {
-                    activeEnemies[activeCount] = wave.enemies[wave.currentSpawn];
+                    activeEnemies[activeCount] = wave->enemies[wave->currentSpawn];
                     activeCount++;
-                    wave.currentSpawn++;
+                    wave->currentSpawn++;
                     spawnClock.restart();
                 }
             }
@@ -352,8 +518,31 @@ int main()
             }
             bool shouldRemove = false;
 
-            if (!activeEnemies[i]->isAlive() || activeEnemies[i]->reachedExit())
+            if (!activeEnemies[i]->isAlive())
+            {
+                if (dynamic_cast<BasicEnemy*>(activeEnemies[i]))
+                    coins += 50;
+
+                else if (dynamic_cast<FastEnemy*>(activeEnemies[i]))
+                    coins += 70;
+
+                else if (dynamic_cast<TankEnemy*>(activeEnemies[i]))
+                    coins += 120;
+
+                else if (dynamic_cast<FlyingEnemy*>(activeEnemies[i]))
+                    coins += 100;
+
+                else if (dynamic_cast<OmegaEnemy*>(activeEnemies[i]))
+                    coins += 300;
                 shouldRemove = true;
+            }
+            else if (activeEnemies[i]->reachedExit())
+            {
+                lives--;
+
+                shouldRemove = true;
+            }
+                
 
             if (shouldRemove)
             {
@@ -365,24 +554,137 @@ int main()
 
         }
 
-        if (wave.currentSpawn >= wave.enemyCount && activeCount == 0)
+        if (wave->currentSpawn >= wave->enemyCount && activeCount == 0)
         {
             currentWave++;
+        }
+
+        if (placingTower)
+        {
+            sf::CircleShape preview(20);
+
+            preview.setFillColor(sf::Color(255, 255, 255, 120));
+
+            if (placingTower)
+            {
+                sf::Vector2f worldMouse = window.mapPixelToCoords(sf::Mouse::getPosition(window));
+                preview.setPosition(worldMouse.x - 20, worldMouse.y - 20);
+                window.draw(preview);
+            }
         }
        
 
         coinText.setString(std::to_string(coins));
+
         coinText.setPosition(1212, 22);  
+        
         window.draw(coinText);
+        
         coinSprite.setPosition(1158, 20);
+        
         window.draw(coinSprite);
-
+        
         heartSprite.setPosition(1280, 22);
+        
         window.draw(heartSprite);
+        
         livesText.setString(std::to_string(lives));
+        
         livesText.setPosition(1322, 22);
+        
         window.draw(livesText);
+        
+        cannonBox.setOutlineColor(sf::Color::White);
+        
+        sniperBox.setOutlineColor(sf::Color::White);
+        
+        machineBox.setOutlineColor(sf::Color::White);
+        
+        slowBox.setOutlineColor(sf::Color::White);
+        
+        bombBox.setOutlineColor(sf::Color::White);
+        
+        if (selectedTower == "Cannon")
+        
+            cannonBox.setOutlineColor(sf::Color::Yellow);
 
+        if (selectedTower == "Sniper")
+            sniperBox.setOutlineColor(sf::Color::Yellow);
+
+        if (selectedTower == "Machine")
+            machineBox.setOutlineColor(sf::Color::Yellow);
+
+        if (selectedTower == "Slow")
+            slowBox.setOutlineColor(sf::Color::Yellow);
+
+        if (selectedTower == "Bomb")
+            bombBox.setOutlineColor(sf::Color::Yellow);
+
+        for (int i = 0; i < towerCount; i++)
+        {
+            placedTowers[i]->update(activeEnemies, activeCount);
+            placedTowers[i]->render(window);
+            if (!placedTowers[i]->isAlive())
+            {
+               
+                int col = (int)(placedTowers[i]->getX() / TileSize);
+                int row = (int)(placedTowers[i]->getY() / TileSize);
+                grid[row][col] = 0;
+
+                delete placedTowers[i];
+
+               
+                placedTowers[i] = placedTowers[towerCount - 1];
+                placedTowers[towerCount - 1] = nullptr;
+                towerCount--;
+                i--;
+            }
+        }
+
+        sf::Vector2f mousePos = window.mapPixelToCoords(sf::Mouse::getPosition(window));
+
+        
+        cannonBox.setOutlineColor(sf::Color::White);
+        sniperBox.setOutlineColor(sf::Color::White);
+        machineBox.setOutlineColor(sf::Color::White);
+        slowBox.setOutlineColor(sf::Color::White);
+        bombBox.setOutlineColor(sf::Color::White);
+        lifeBox.setOutlineColor(sf::Color::White);
+
+        if (lifeBox.getGlobalBounds().contains(mousePos.x, mousePos.y))
+            lifeBox.setOutlineColor(sf::Color::Cyan);
+
+      
+        if (cannonBox.getGlobalBounds().contains(mousePos.x, mousePos.y))
+            cannonBox.setOutlineColor(sf::Color::Cyan);
+
+        if (sniperBox.getGlobalBounds().contains(mousePos.x, mousePos.y))
+            sniperBox.setOutlineColor(sf::Color::Cyan);
+
+        if (machineBox.getGlobalBounds().contains(mousePos.x, mousePos.y))
+            machineBox.setOutlineColor(sf::Color::Cyan);
+
+        if (slowBox.getGlobalBounds().contains(mousePos.x, mousePos.y))
+            slowBox.setOutlineColor(sf::Color::Cyan);
+
+        if (bombBox.getGlobalBounds().contains(mousePos.x, mousePos.y))
+            bombBox.setOutlineColor(sf::Color::Cyan);
+
+    
+        if (selectedTower == "Cannon")
+            cannonBox.setOutlineColor(sf::Color::Yellow);
+
+        if (selectedTower == "Sniper")
+            sniperBox.setOutlineColor(sf::Color::Yellow);
+
+        if (selectedTower == "Machine")
+            machineBox.setOutlineColor(sf::Color::Yellow);
+
+        if (selectedTower == "Slow")
+            slowBox.setOutlineColor(sf::Color::Yellow);
+
+        if (selectedTower == "Bomb")
+            bombBox.setOutlineColor(sf::Color::Yellow);
         window.draw(cannonBox);
         window.draw(cannonText);
         window.draw(sniperBox);
@@ -393,6 +695,9 @@ int main()
         window.draw(slowText);
         window.draw(bombBox);
         window.draw(bombText);
+        window.draw(lifeBox);
+        window.draw(smallHeartSprite);
+        window.draw(lifeText);
         window.display();
     }
     return 0;
