@@ -1,7 +1,7 @@
 #pragma once
 #include "Entity.h"
 #include "Enemy.h"
-#include"Globals.h"
+#include"Variables.h"
 class Tower : public Entity
 {
 protected:
@@ -14,6 +14,7 @@ public:
     }
     virtual void attack() = 0;
     void update() override {}
+    virtual void update(Enemy* enemies[], int count) {}
     void setTarget(Enemy* e) { target = e; }
     bool inRange(Enemy* e) const
     {
@@ -24,8 +25,6 @@ public:
     virtual ~Tower() {}
 };
 
-#pragma once
-#include "Tower.h"
 
 class CannonTower : public Tower
 {
@@ -34,6 +33,9 @@ class CannonTower : public Tower
 
     float fireRate;
     sf::Clock fireClock;
+
+    sf::SoundBuffer fireBuffer;
+    sf::Sound fireSound;
 
 public:
 
@@ -51,6 +53,9 @@ public:
         float sy = 64.f / texture.getSize().y;
 
         sprite.setScale(sx, sy);
+
+        fireBuffer.loadFromFile("assets/gunshots.wav");
+        fireSound.setBuffer(fireBuffer);
     }
 
     void attack() override
@@ -67,18 +72,45 @@ public:
         if (fireClock.getElapsedTime().asSeconds() >= fireRate)
         {
             target->takeDamage(damage);
+            fireSound.play();
             takeDamage(40);
             fireClock.restart();
         }
     }
 
-    void update() override
+    void acquireTarget(Enemy* enemies[], int count)
     {
-        attack();
+        if (target != nullptr && target->isAlive() && inRange(target))
+            return;
+        target = nullptr;
+        for (int i = 0; i < count; i++)
+        {
+            if (enemies[i]->isAlive() && inRange(enemies[i]))
+            {
+                target = enemies[i];
+                break;
+            }
+        }
+    }
+
+    void update(Enemy* enemies[], int count) override
+    {
+
+        if (!isAlive()) return;
+        acquireTarget(enemies, count);
+        if (target != nullptr && target->isAlive() && inRange(target))
+        {
+            attack();
+        }
+        else
+        {
+            fireSound.stop(); 
+        }
     }
 
     void render(sf::RenderWindow& window) override
     {
+       
         sf::CircleShape rangeCircle(range);
 
         rangeCircle.setOrigin(range, range);
@@ -125,8 +157,7 @@ public:
     }
 };
 
-#pragma once
-#include "Tower.h"
+
 
 class SniperTower : public Tower
 {
@@ -135,6 +166,9 @@ class SniperTower : public Tower
 
     float fireRate;
     sf::Clock fireClock;
+
+    sf::SoundBuffer fireBuffer;
+    sf::Sound fireSound;
 
 public:
 
@@ -151,6 +185,8 @@ public:
         float sy = 64.f / texture.getSize().y;
 
         sprite.setScale(sx, sy);
+        fireBuffer.loadFromFile("assets/gunshots.wav");
+        fireSound.setBuffer(fireBuffer);
     }
 
     void attack() override
@@ -167,9 +203,8 @@ public:
         if (fireClock.getElapsedTime().asSeconds() >= fireRate)
         {
             target->takeDamage(damage);
-
+            fireSound.play();
             takeDamage(40);
-
             fireClock.restart();
         }
     }
@@ -198,7 +233,14 @@ public:
 
         acquireTarget(enemies, count);
 
-        attack();
+        if (target != nullptr && target->isAlive() && inRange(target))
+        {
+            attack();
+        }
+        else
+        {
+            fireSound.stop();
+        }
     }
 
     void render(sf::RenderWindow& window) override
@@ -249,8 +291,7 @@ public:
     }
 };
 
-#pragma once
-#include "Tower.h"
+
 
 class MachineGunTower : public Tower
 {
@@ -259,6 +300,9 @@ class MachineGunTower : public Tower
 
     float fireRate;
     sf::Clock fireClock;
+
+    sf::SoundBuffer fireBuffer;
+    sf::Sound fireSound;
 
 public:
 
@@ -275,6 +319,9 @@ public:
         float sy = 64.f / texture.getSize().y;
 
         sprite.setScale(sx, sy);
+
+        fireBuffer.loadFromFile("assets/gunshots.wav");
+        fireSound.setBuffer(fireBuffer);
     }
 
     void attack() override
@@ -291,7 +338,9 @@ public:
         if (fireClock.getElapsedTime().asSeconds() >= fireRate)
         {
             target->takeDamage(damage);
-
+            if (fireSound.getStatus() != sf::Sound::Playing)  
+                fireSound.play();
+            takeDamage(5);
             fireClock.restart();
         }
     }
@@ -320,7 +369,14 @@ public:
 
         acquireTarget(enemies, count);
 
-        attack();
+        if (target != nullptr && target->isAlive() && inRange(target))
+        {
+            attack();
+        }
+        else
+        {
+            fireSound.stop();
+        }
     }
 
     void render(sf::RenderWindow& window) override
@@ -379,6 +435,8 @@ class SlowTower : public Tower
     float slowFactor;
     sf::Clock decayClock;
     float decayRate = 1.0f; 
+    sf::SoundBuffer fireBuffer;
+    sf::Sound fireSound;
 public:
 
     SlowTower(float x, float y)
@@ -394,6 +452,9 @@ public:
         float sy = 64.f / texture.getSize().y;
 
         sprite.setScale(sx, sy);
+
+        fireBuffer.loadFromFile("assets/slow.mp3");
+        fireSound.setBuffer(fireBuffer);
     }
 
     bool isSlowingAnyEnemy(Enemy* enemies[], int count)
@@ -425,10 +486,12 @@ public:
             if (inRange(enemies[i]))
             {
                 enemies[i]->setSpeed(enemies[i]->getBaseSpeed() * slowFactor);
+               
             }
             else
             {
                 enemies[i]->setSpeed(enemies[i]->getBaseSpeed());
+                
             }
         }
     }
@@ -441,6 +504,7 @@ public:
         if (decayClock.getElapsedTime().asSeconds() >= decayRate)
         {
             takeDamage(10);
+            
             decayClock.restart();
         }
     }
@@ -451,6 +515,17 @@ public:
             return;
 
         applySlow(enemies, count);
+        if (isSlowingAnyEnemy(enemies, count))
+        {
+            if (fireSound.getStatus() != sf::Sound::Playing)
+            {
+                fireSound.play();
+            }
+        }
+        else
+        {
+            fireSound.stop();
+        }
 
         decayOnUse(enemies, count);
     }
@@ -506,8 +581,6 @@ public:
 };
 
 
-
-
 class BombTower : public Tower
 {
     sf::Texture texture;
@@ -523,6 +596,9 @@ class BombTower : public Tower
     bool exploding;
     float explosionVisualRadius;
     sf::Vector2f explosionCenter;
+
+    sf::SoundBuffer fireBuffer;
+    sf::Sound fireSound;
 
 public:
 
@@ -545,6 +621,8 @@ public:
         float sy = 64.f / texture.getSize().y;
 
         sprite.setScale(sx, sy);
+        fireBuffer.loadFromFile("assets/bomb.ogg");
+        fireSound.setBuffer(fireBuffer);
     }
 
     void attack() override
@@ -590,6 +668,7 @@ public:
             if (dist2 <= explosionRadius * explosionRadius)
             {
                 enemies[i]->takeDamage(damage);
+                fireSound.play();
             }
         }
     }
