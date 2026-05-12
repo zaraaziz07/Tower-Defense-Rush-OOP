@@ -1,10 +1,14 @@
 #include"Entity.h"
 #include"Enemy.h"
 #include"Tower.h"
-#include"Globals.h"
+#include"Variables.h"
+#include <SFML/Graphics.hpp>
+#include <SFML/Audio.hpp>
+#include <iostream>
+#include <cmath>
+using namespace std;
 
 Wave waves[totalWaves];
-
 void SetAttackPath()
 {
     for (int i = 0;i < 9;i++)
@@ -215,6 +219,28 @@ int main()
         25.f / smallHeartTexture.getSize().x,
         25.f / smallHeartTexture.getSize().y);
 
+    sf::SoundBuffer winBuffer, loseBuffer, startBuffer;
+    sf::Sound winSound, loseSound, startSound;
+
+    sf::Texture winTexture, loseTexture, startTexture;
+    sf::Sprite winSprite, loseSprite, startSprite;
+
+    startBuffer.loadFromFile("assets/gameStart.wav");
+    winBuffer.loadFromFile("assets/gameWin.wav");
+    loseBuffer.loadFromFile("assets/gameOver.mp3");
+
+    startSound.setBuffer(startBuffer);
+    winSound.setBuffer(winBuffer);
+    loseSound.setBuffer(loseBuffer);
+
+    startTexture.loadFromFile("assets/play.png");
+    winTexture.loadFromFile("assets/gameWinImg.jpg");
+    loseTexture.loadFromFile("assets/gameOverImg.png");
+
+    startSprite.setTexture(startTexture);
+    winSprite.setTexture(winTexture);
+    loseSprite.setTexture(loseTexture);
+
     sf::RectangleShape lifeBox(sf::Vector2f(200, 60));
     lifeBox.setPosition(1160, 520);
     lifeBox.setFillColor(sf::Color(150, 20, 20));
@@ -313,10 +339,19 @@ int main()
     sf::Clock spawnClock;
     Enemy* activeEnemies[MaxEnemiesPerWave];
     int activeCount = 0;
-  
+    int gameState = 0;
+    float endAnimScale = 0.f;
+
+    sf::Clock startClock;
+    float startScale = 0.f;
+
+    float centerX = gameView.getCenter().x;
+    float centerY = gameView.getCenter().y;
+    startSound.play();
 
     while (window.isOpen())
     {
+        bool showIntro = startClock.getElapsedTime().asSeconds() < 6.f;
         sf::Event event;
         while (window.pollEvent(event))
         {
@@ -490,9 +525,70 @@ int main()
 
 
         }
+
+        if (showIntro)
+        {
+            if (startScale < 1.f)
+                startScale += 0.02f;
+
+            startSprite.setOrigin(
+                startSprite.getTexture()->getSize().x / 2.f,
+                startSprite.getTexture()->getSize().y / 2.f
+            );
+
+            startSprite.setPosition(centerX, centerY);
+
+            startSprite.setScale(startScale, startScale);
+
+            window.draw(startSprite);
+
+            window.display();
+
+            continue;
+        }
+
+        if (gameState != 0)
+        {
+            //window.clear(sf::Color::Black);
+
+            if (endAnimScale < 1.f)
+                endAnimScale += 0.02f;
+
+            if (gameState == 1)
+            {
+                winSprite.setOrigin(
+                    winSprite.getTexture()->getSize().x / 2.f,
+                    winSprite.getTexture()->getSize().y / 2.f
+                );
+
+                winSprite.setPosition(centerX, centerY);
+
+                winSprite.setScale(endAnimScale, endAnimScale);
+
+                window.draw(winSprite);
+            }
+
+            if (gameState == 2)
+            {
+                loseSprite.setOrigin(
+                    loseSprite.getTexture()->getSize().x / 2.f,
+                    loseSprite.getTexture()->getSize().y / 2.f
+                );
+
+                loseSprite.setPosition(centerX, centerY);
+
+                loseSprite.setScale(endAnimScale, endAnimScale);
+
+                window.draw(loseSprite);
+            }
+
+            window.display();
+
+            continue;
+        }
         Wave* wave = nullptr;
 
-        if (currentWave < totalWaves)
+        if (currentWave < totalWaves && gameState == 0)
         {
             wave = &waves[currentWave];
             if (wave->currentSpawn < wave->enemyCount)    //agar current enemy ka number less ho total enemies of the wave se
@@ -511,38 +607,26 @@ int main()
 
         for (int i = 0; i < activeCount; i++)
         {
-            if (activeEnemies[i] != nullptr)
-            {
-                activeEnemies[i]->update();
-                activeEnemies[i]->render(window);
-            }
+            if (activeEnemies[i] == nullptr) continue;
+
+            activeEnemies[i]->update();
+
             bool shouldRemove = false;
 
             if (!activeEnemies[i]->isAlive())
             {
-                if (dynamic_cast<BasicEnemy*>(activeEnemies[i]))
-                    coins += 50;
-
-                else if (dynamic_cast<FastEnemy*>(activeEnemies[i]))
-                    coins += 70;
-
-                else if (dynamic_cast<TankEnemy*>(activeEnemies[i]))
-                    coins += 120;
-
-                else if (dynamic_cast<FlyingEnemy*>(activeEnemies[i]))
-                    coins += 100;
-
-                else if (dynamic_cast<OmegaEnemy*>(activeEnemies[i]))
-                    coins += 300;
+                if (dynamic_cast<BasicEnemy*>(activeEnemies[i]))       coins += 50;
+                else if (dynamic_cast<FastEnemy*>(activeEnemies[i]))   coins += 70;
+                else if (dynamic_cast<TankEnemy*>(activeEnemies[i]))   coins += 120;
+                else if (dynamic_cast<FlyingEnemy*>(activeEnemies[i])) coins += 100;
+                else if (dynamic_cast<OmegaEnemy*>(activeEnemies[i]))  coins += 300;
                 shouldRemove = true;
             }
             else if (activeEnemies[i]->reachedExit())
             {
                 lives--;
-
                 shouldRemove = true;
             }
-                
 
             if (shouldRemove)
             {
@@ -551,12 +635,26 @@ int main()
                 activeCount--;
                 i--;
             }
+            else
+            {
+                activeEnemies[i]->render(window); 
+            }
 
+            if (lives <= 0 && gameState == 0)
+            {
+                gameState = 2;
+                loseSound.play();
+            }
         }
 
         if (wave->currentSpawn >= wave->enemyCount && activeCount == 0)
         {
             currentWave++;
+        }
+        if (currentWave >= totalWaves && gameState == 0)
+        {
+            gameState = 1;
+            winSound.play();
         }
 
         if (placingTower)
@@ -685,6 +783,7 @@ int main()
 
         if (selectedTower == "Bomb")
             bombBox.setOutlineColor(sf::Color::Yellow);
+       
         window.draw(cannonBox);
         window.draw(cannonText);
         window.draw(sniperBox);
