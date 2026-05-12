@@ -8,7 +8,7 @@ Defend your base against waves of enemies by placing different types of towers s
 # 📸 Game Preview
 
 <!-- Add your game screenshot here -->
-(assets/screenshots.png)
+![Tower Defense Game](assets/screenshots.png)
 
 ---
 
