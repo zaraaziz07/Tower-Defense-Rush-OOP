@@ -8,7 +8,7 @@ Defend your base against waves of enemies by placing different types of towers s
 # 📸 Game Preview
 
 <!-- Add your game screenshot here -->
-![Game Screenshot](your-image-name.png)
+(assets/screenshots.png)
 
 ---
 
@@ -360,7 +360,7 @@ Bomb tower explosions spread between nearby enemies.
 
 # 👨‍💻 Developer
 
-Developed by **Your Name**
+Developed by **Zara Aziz**
 
 ---
 
