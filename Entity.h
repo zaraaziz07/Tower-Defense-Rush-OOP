@@ -1,5 +1,5 @@
 #pragma once
-#include"Globals.h"
+#include"Variables.h"
 class Entity {
 protected:
     float x;
@@ -11,10 +11,10 @@ public:
 
     virtual void update() = 0;  //movement logic
     virtual void render(sf::RenderWindow& window) = 0;
-    virtual string getType()const=0;
+    virtual string getType()const = 0;
     virtual void takeDamage(int dmg)
     {
-        dmg = -hp;
+        hp -= dmg;
         if (hp < 0)
             hp = 0;
 
