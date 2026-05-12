@@ -1,35 +1,40 @@
 #pragma once
-#include <SFML/Graphics.hpp>
 #include"Entity.h"
-#include"Globals.h"
-class Enemy:public Entity {
+#include"Variables.h"
+class Enemy :public Entity {
 protected:
-	float speed;
-	int reward;
-	int pathIndex;
+    float speed;
+    int reward;
+    int pathIndex;
+    float baseSpeed;
 public:
     Enemy(float x, float y, int hp, float speed, int reward)
-        : Entity(x, y, hp), speed(speed), reward(reward), pathIndex(0) {
+        : Entity(x, y, hp), speed(speed), reward(reward), pathIndex(0),baseSpeed(speed) {
     }
 
     virtual void move() = 0;
+    virtual bool reachedExit() const = 0;
 
-    void update() override { move(); } 
+    void update() override { move(); }
 
     int   getReward()    const { return reward; }
     float getSpeed()     const { return speed; }
-    void  setSpeed(float s) { speed = s; }  
+    void  setSpeed(float s) { speed = s; }
+    float getBaseSpeed() const
+    {
+        return baseSpeed;
+    }
 
     virtual ~Enemy() {}
 };
-class BasicEnemy:public Enemy {
+class BasicEnemy :public Enemy {
     sf::Texture texture;
     sf::Sprite sprite;
     WayPoint* path;   //A pointer that points to the WayPoints array
     int pathCount;    //Shows how many WayPoints
 public:
-    BasicEnemy(WayPoint* path,int pathCount) :Enemy(path[0].x, path[0].y, 100, 1.0f, 10)
-    ,path(path), pathCount(pathCount)
+    BasicEnemy(WayPoint* path, int pathCount) :Enemy(path[0].x, path[0].y, 100, 1.0f, 10)
+        , path(path), pathCount(pathCount)
     {
         if (!texture.loadFromFile("assets/BasicEnemy.png"))
         {
@@ -67,7 +72,7 @@ public:
     {
         sprite.setPosition(x, y);
         window.draw(sprite);
-        
+
         sf::RectangleShape bgBar(sf::Vector2f(40, 5));
         bgBar.setFillColor(sf::Color::Red);
         bgBar.setPosition(x, y - 8);
@@ -90,7 +95,7 @@ class FastEnemy :public Enemy {
     WayPoint* path;
     int pathCount;
 public:
-    FastEnemy(WayPoint* path, int pathCount) :Enemy(path[0].x, path[0].y, 50, 2.0f, 20)
+    FastEnemy(WayPoint* path, int pathCount) :Enemy(path[0].x, path[0].y, 50, 1.5f, 20)
         , path(path), pathCount(pathCount)
     {
         if (!texture.loadFromFile("assets/FastEnemy.png"))
@@ -149,7 +154,7 @@ class TankEnemy :public Enemy {
     WayPoint* path;
     int pathCount;
 public:
-    TankEnemy(WayPoint* path, int pathCount) :Enemy(path[0].x, path[0].y, 200, 0.7f, 50)
+    TankEnemy(WayPoint* path, int pathCount) :Enemy(path[0].x, path[0].y, 350, 0.7f, 50)
         , path(path), pathCount(pathCount)
     {
         if (!texture.loadFromFile("assets/TankEnemy.png"))
@@ -205,14 +210,14 @@ public:
 class FlyingEnemy : public Enemy {
     sf::Texture texture;
     sf::Sprite sprite;
-    float destX;   
-    float destY;   
+    float destX;
+    float destY;
     bool arrived;
 
 public:
-   
+
     FlyingEnemy(float startX, float startY, float destX, float destY)
-        : Enemy(startX, startY, 60, 2.2f, 20),
+        : Enemy(startX, startY, 60, 1.8f, 35),
         destX(destX), destY(destY), arrived(false)
     {
         if (!texture.loadFromFile("assets/FlyingEnemyS2.png"))
@@ -228,7 +233,7 @@ public:
     {
         if (arrived) return;
 
-        
+
         float dx = destX - x;
         float dy = destY - y;
         float dist = sqrt(dx * dx + dy * dy);
@@ -237,7 +242,7 @@ public:
         {
             x = destX;
             y = destY;
-            arrived = true;  
+            arrived = true;
         }
         else
         {
@@ -252,7 +257,7 @@ public:
         sprite.setPosition(x, y);
         window.draw(sprite);
 
-       
+
         sf::RectangleShape bgBar(sf::Vector2f(45, 5));
         bgBar.setFillColor(sf::Color::Red);
         bgBar.setPosition(x, y - 8);
@@ -260,7 +265,7 @@ public:
 
         float ratio = (float)hp / maxHp;
         sf::RectangleShape hpBar(sf::Vector2f(45 * ratio, 5));
-        hpBar.setFillColor(sf::Color::Cyan);  
+        hpBar.setFillColor(sf::Color::Cyan);
         hpBar.setPosition(x, y - 8);
         window.draw(hpBar);
     }
@@ -277,7 +282,7 @@ class OmegaEnemy : public Enemy {
 
 public:
     OmegaEnemy(WayPoint* path, int pathCount)
-        : Enemy(path[0].x, path[0].y, 500, 0.5f, 50),
+        : Enemy(path[0].x, path[0].y, 500, 0.5f, 100),
         path(path), pathCount(pathCount)
     {
         if (!texture.loadFromFile("assets/Omega.png"))
@@ -313,30 +318,27 @@ public:
         }
     }
 
-    
+
     void takeDamage(int dmg) override
     {
         hp -= dmg;
-        if (hp < 0) hp = 0;
+        if (hp <= 0) { hp = 0; return; }
 
         float ratio = (float)hp / maxHp;
 
-        if (ratio <= 0.25f)
-            speed = 3.2f;       
-        else if (ratio <= 0.50f)
-            speed = 2.2f;      
-        else if (ratio <= 0.75f)
-            speed = 1.5f;       
-        else
-            speed = 0.5f;     
+        if (ratio <= 0.25f) speed = baseSpeed = 3.2f;
+        else if (ratio <= 0.50f) speed = baseSpeed = 2.2f;
+        else if (ratio <= 0.75f) speed = baseSpeed = 1.5f;
+        else                     speed = baseSpeed = 0.5f;
     }
 
     void render(sf::RenderWindow& window) override
     {
+        if (!isAlive()) return;
         sprite.setPosition(x, y);
         window.draw(sprite);
 
-       
+
         sf::RectangleShape bgBar(sf::Vector2f(48, 5));
         bgBar.setFillColor(sf::Color::Red);
         bgBar.setPosition(x - 8, y - 12);
@@ -345,13 +347,11 @@ public:
         float ratio = (float)hp / maxHp;
         sf::RectangleShape hpBar(sf::Vector2f(48 * ratio, 5));
 
-      
-        if (ratio <= 0.25f)
-            hpBar.setFillColor(sf::Color::Red);
-        else if (ratio <= 0.50f)
-            hpBar.setFillColor(sf::Color(255, 100, 0));  
-        else
-            hpBar.setFillColor(sf::Color(160, 32, 240));
+
+        if (ratio <= 0.25f) hpBar.setFillColor(sf::Color::Red);
+        else if (ratio <= 0.50f) hpBar.setFillColor(sf::Color(255, 100, 0));
+        else if (ratio <= 0.75f) hpBar.setFillColor(sf::Color(160, 32, 240));
+        else                     hpBar.setFillColor(sf::Color(160, 32, 240));
 
         hpBar.setPosition(x - 8, y - 12);
         window.draw(hpBar);
