@@ -36,20 +36,6 @@ Defend your base against waves of enemies by placing different types of towers s
 
 ---
 
-# 📂 Project Structure
-
-```bash
-├── assets/
-├── Entity.h
-├── Enemy.h
-├── Tower.h
-├── Variables.h
-├── main.cpp
-└── README.md
-```
-
----
-
 # 🎮 Gameplay
 
 - Place towers strategically to defend the path.
@@ -154,14 +140,9 @@ Bomb tower explosions spread between nearby enemies.
 - More Boss Enemies
 - Multiplayer Mode
 
----
 
-# 👨‍💻 Developer
 
-Developed by **Zara Aziz**
 
----
 
-# 📜 License
 
-This project is for educational purposes.
+-
